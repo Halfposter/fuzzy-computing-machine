@@ -7,7 +7,7 @@ on:
 jobs:
   build-clang:
     # Use an older LTS to maximize glibc compatibility for the final binary
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04.04
 
     steps:
       - name: Checkout LLVM Project
@@ -15,7 +15,7 @@ jobs:
         with:
           repository: llvm/llvm-project
           # Use a specific stable release branch (e.g., LLVM 17)
-          ref: release/17.x 
+          ref: release/22.x
           # A shallow clone is critical; the full LLVM history is massive
           fetch-depth: 1 
 
