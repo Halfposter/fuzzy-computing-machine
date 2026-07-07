@@ -7,7 +7,7 @@ on:
 jobs:
   build-clang:
     # Use an older LTS to maximize glibc compatibility for the final binary
-    runs-on: ubuntu-22.04.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout LLVM Project
