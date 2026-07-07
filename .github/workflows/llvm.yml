@@ -5,14 +5,14 @@ on:
 
 jobs:
   build-clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout LLVM Project
         uses: actions/checkout@v4
         with:
           repository: llvm/llvm-project
-          ref: release/17.x 
+          ref: release/22.x 
           fetch-depth: 1 
 
       - name: Install Build Dependencies
