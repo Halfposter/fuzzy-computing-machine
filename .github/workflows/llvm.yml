@@ -1,0 +1,67 @@
+name: Build Static Clang Toolchain
+
+# Trigger manually from the GitHub Actions tab
+on:
+  workflow_dispatch:
+
+jobs:
+  build-clang:
+    # Use an older LTS to maximize glibc compatibility for the final binary
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout LLVM Project
+        uses: actions/checkout@v4
+        with:
+          repository: llvm/llvm-project
+          # Use a specific stable release branch (e.g., LLVM 17)
+          ref: release/17.x 
+          # A shallow clone is critical; the full LLVM history is massive
+          fetch-depth: 1 
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build build-essential
+
+      - name: Configure LLVM Build
+        run: |
+          mkdir build
+          cd build
+          
+          # Configure CMake for a static, release-optimized build
+          # LLVM_PARALLEL_LINK_JOBS=1 is crucial to prevent the GitHub runner 
+          # from running out of memory (OOM) during the linking phase.
+          cmake -G Ninja ../llvm \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_PROJECTS="clang;lld" \
+            -DLLVM_BUILD_STATIC=ON \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DLLVM_LINK_LLVM_DYLIB=OFF \
+            -DLLVM_TARGETS_TO_BUILD="X86" \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" \
+            -DLLVM_PARALLEL_LINK_JOBS=1
+
+      - name: Compile Clang and LLD
+        run: |
+          cd build
+          # This step will take a significant amount of time (1-2 hours)
+          ninja clang lld
+
+      - name: Strip Binaries to Reduce Size
+        run: |
+          cd build/bin
+          # Stripping removes debug symbols, drastically reducing file size
+          strip clang* lld* ld.lld* || true
+
+      - name: Upload Static Toolchain Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-clang-linux-x86_64
+          path: |
+            build/bin/clang
+            build/bin/clang++
+            build/bin/lld
+            build/bin/ld.lld
+          # Retain the artifact for 7 days
+          retention-days: 7
