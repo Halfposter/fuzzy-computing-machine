@@ -1,22 +1,18 @@
 name: Build Static Clang Toolchain
 
-# Trigger manually from the GitHub Actions tab
 on:
   workflow_dispatch:
 
 jobs:
   build-clang:
-    # Use an older LTS to maximize glibc compatibility for the final binary
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout LLVM Project
         uses: actions/checkout@v4
         with:
           repository: llvm/llvm-project
-          # Use a specific stable release branch (e.g., LLVM 17)
-          ref: release/22.x
-          # A shallow clone is critical; the full LLVM history is massive
+          ref: release/17.x 
           fetch-depth: 1 
 
       - name: Install Build Dependencies
@@ -29,9 +25,6 @@ jobs:
           mkdir build
           cd build
           
-          # Configure CMake for a static, release-optimized build
-          # LLVM_PARALLEL_LINK_JOBS=1 is crucial to prevent the GitHub runner 
-          # from running out of memory (OOM) during the linking phase.
           cmake -G Ninja ../llvm \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_ENABLE_PROJECTS="clang;lld" \
@@ -45,13 +38,11 @@ jobs:
       - name: Compile Clang and LLD
         run: |
           cd build
-          # This step will take a significant amount of time (1-2 hours)
           ninja clang lld
 
       - name: Strip Binaries to Reduce Size
         run: |
           cd build/bin
-          # Stripping removes debug symbols, drastically reducing file size
           strip clang* lld* ld.lld* || true
 
       - name: Upload Static Toolchain Artifacts
@@ -63,5 +54,5 @@ jobs:
             build/bin/clang++
             build/bin/lld
             build/bin/ld.lld
-          # Retain the artifact for 7 days
+            build/lib/clang/*/include
           retention-days: 7
